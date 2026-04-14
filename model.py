@@ -132,24 +132,19 @@ def load_artifacts():
     """Load all saved model and explainer artifacts."""
     import joblib
 
-    # Primary model (TabPFN)
-    model = None
-    for name in ["tabpfn.joblib", "rf_explainability_model.joblib"]:
-        path = os.path.join(MODELS_DIR, name)
-        if os.path.exists(path):
-            model = joblib.load(path)
-            break
-    if model is None:
+    # Use surrogate model as the primary model (CPU-friendly)
+    model_path = os.path.join(MODELS_DIR, "surrogate_lgbm.joblib")
+
+    if not os.path.exists(model_path):
         raise FileNotFoundError(
-            f"No model file found in {MODELS_DIR}. "
-            "Run the notebook first to generate artifacts."
+            f"surrogate_lgbm.joblib not found in {MODELS_DIR}. "
+            "Make sure you exported it from your notebook."
         )
 
-    # Surrogate model (LightGBM) for fast What-If predictions
-    surrogate = None
-    surrogate_path = os.path.join(MODELS_DIR, "surrogate_lgbm.joblib")
-    if os.path.exists(surrogate_path):
-        surrogate = joblib.load(surrogate_path)
+    model = joblib.load(model_path)
+
+    # Keep surrogate reference
+    surrogate = model
 
     X_train = pd.read_csv(os.path.join(ARTIFACTS_DIR, "X_train.csv"))
     X_test = pd.read_csv(os.path.join(ARTIFACTS_DIR, "X_test.csv"))
